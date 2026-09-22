@@ -131,7 +131,7 @@ const card = (variant, w, h, x = 0, y = 0) => `
   .ws-drag  { position:absolute; top:6px; left:6px; z-index:30;
               width:18px; height:18px; border-radius:6px;
               display:flex; align-items:center; justify-content:center;
-              font-size:11px; line-height:1; cursor:grab; opacity:0.42;
+              font-size:11px; line-height:1; cursor:grab; opacity:0.22;
               transition:opacity .15s ease; user-select:none;
               -webkit-user-select:none;
               color:${variant === "dark" ? T.onDarkMute : T.inkMute};
@@ -143,7 +143,7 @@ const card = (variant, w, h, x = 0, y = 0) => `
   .ws-resize { position:absolute; bottom:5px; right:5px; z-index:30;
                width:16px; height:16px; border-radius:5px;
                display:flex; align-items:center; justify-content:center;
-               font-size:11px; line-height:1; cursor:nwse-resize; opacity:0.42;
+               font-size:11px; line-height:1; cursor:nwse-resize; opacity:0.22;
                transition:opacity .15s ease; user-select:none;
                -webkit-user-select:none;
                color:${variant === "dark" ? T.onDarkMute : T.inkMute};
@@ -345,18 +345,15 @@ const resolve = (key, props, parse, mock) => {
 };
 // --- End inlined design system ---
 
-// pi-fleet — your Raspberry Pis as an industrial control cabinet: a light-grey
-// (RAL 7035) enclosure with a hazard stripe and hex screws, one sub-panel per
-// host with an engraved traffolyte name label, an analog temperature gauge with
-// a red zone, an LED bargraph for load, LED strips for memory and disk, a
-// chrome pilot lamp, and engraved uptime. Probed over SSH with key auth and short timeouts; the
-// helper is embedded below and is read-only. Hosts live in
-// ~/.config/widgetsuite/pi-fleet.json; with no config the rack shows labeled
-// sample units so it is never blank.
+// pi-fleet — your Raspberry Pis at a glance: reachability, SoC temperature,
+// load, memory, disk, uptime, and throttling flags, probed over SSH with key
+// auth and short timeouts. Hosts live in ~/.config/widgetsuite/pi-fleet.json
+// (install.sh writes an example). With no config the widget shows labeled
+// sample data instead of a blank card. The probe is read-only and installs
+// nothing on the Pis.
 
-const POS = [640, 400];
+const POS = [640, 420];
 const KEY = "pifleet";
-const FONTS = "pi-fleet.widget/fonts";
 
 export const command = String.raw`python3 - <<'PY'
 #!/usr/bin/env python3
@@ -433,125 +430,151 @@ export const refreshFrequency = 1000 * 30;
 const parse = (out) => { const j = JSON.parse(out); return j && Array.isArray(j.hosts) ? j : null; };
 const MOCK = { now: 0, demo: true, hosts: [] };
 
-const fmtUp = (s) => { if (!s) return "--"; const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60); return d ? `${d}D ${String(h).padStart(2, "0")}H` : h ? `${h}H ${String(m).padStart(2, "0")}M` : `${m}M`; };
-const pct = (used, total) => total ? Math.min(1, used / total) : 0;
-const throttle = (hex) => { const v = parseInt(hex || "0", 16) || 0; return (v & 0xF) ? "now" : (v & 0xF0000) ? "before" : null; };
+const fmtUp = (s) => { if (!s) return "—"; const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60); return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`; };
+const fmtGB = (b) => b >= 1e9 ? `${(b / 1e9).toFixed(b >= 1e10 ? 0 : 1)}G` : `${Math.round(b / 1e6)}M`;
+const pct = (used, total) => total ? Math.min(100, Math.round((used / total) * 100)) : 0;
+const tempTint = (t) => t >= 70 ? T.tintPink : t >= 55 ? T.tintOrange : T.tintGreen;
+const throttle = (hex) => {
+  const v = parseInt(hex || "0", 16) || 0;
+  if (v & 0xF) return { label: "throttled", tint: T.tintPink };
+  if (v & 0xF0000) return { label: "was throttled", tint: T.tintOrange };
+  return null;
+};
+const headline = (hosts, demo) => {
+  const n = hosts.length, up = hosts.filter((h) => h.online).length;
+  if (!n) return "No Pis configured yet.";
+  if (up === n) return n === 1 ? "The Pi is up." : `All ${n} Pis are up.`;
+  if (!up) return "Nothing answers.";
+  return `${up} of ${n} up, ${n - up} dark.`;
+};
 
-const SAVED_HOSTS = (((recall(KEY) || {}).data || {}).hosts || []).length;
-const UNITS = Math.max(3, Math.min(6, SAVED_HOSTS || 3));
-const W = 640, UH = 64, H = 100 + UNITS * (UH + 8);
+const SAVED_HOSTS = (((recall("pifleet") || {}).data || {}).hosts || []).length;
+const W = 440, H = SAVED_HOSTS > 3 ? 452 : 300;
 
-export const className = card("light", W, H, ...POS) + `
-  @font-face { font-family: "Barlow Condensed"; src: url("${FONTS}/BarlowCondensed-600.woff2") format("woff2"); font-weight: 600; }
-  @font-face { font-family: "Barlow Condensed"; src: url("${FONTS}/BarlowCondensed-700.woff2") format("woff2"); font-weight: 700; }
-  --cond: "Barlow Condensed", "Arial Narrow", sans-serif; --ink: #2B2E2B; --panel: #CFD3CE; --green: #2FBF5A; --red: #E0352B; --amber: #F2B31A;
-  padding: 0; border-radius: 6px; backdrop-filter: none; overflow: hidden; font-family: var(--cond); user-select:none; -webkit-user-select:none;
-  background: linear-gradient(180deg, #D9DCD8 0%, var(--panel) 50%, #C6CBC6 100%);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px #8F958F, inset 0 -2px 0 rgba(0,0,0,0.15);
-  &::before { content:""; position:absolute; inset:0; pointer-events:none; opacity: 0.35; mix-blend-mode: multiply; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"); }
-  .door { position:absolute; inset: 10px; border-radius: 4px; pointer-events:none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.5); }
-  .hazard { position:absolute; left: 11px; right: 11px; top: 11px; height: 6px; border-radius: 3px 3px 0 0; pointer-events:none; background: repeating-linear-gradient(45deg, #F2C230 0 9px, #1A1A1A 9px 18px); opacity: 0.9; }
-  .ws-drag { top: 22px; left: 30px; color: #4a4e4a; background: rgba(0,0,0,0.06); } .ws-resize { bottom: 14px; right: 30px; color: #4a4e4a; background: rgba(0,0,0,0.06); }
-  .screw { position:absolute; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #9EA39E, #4A4E4A 60%, #2A2C2A 100%); box-shadow: 0 1px 0 rgba(255,255,255,0.5), inset 0 0 0 1px #202220; }
-  .screw::after { content:""; position:absolute; left: 3px; top: 3px; width: 4px; height: 4px; background: #111; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
-  .head { position:absolute; top: 26px; left: 30px; right: 30px; display:flex; justify-content:space-between; align-items:center; }
-  .head .left { display:flex; align-items:center; gap: 12px; }
-  .plate { display:inline-block; background: #1D1F1D; color: #F4F4F0; font: 700 11px/1 var(--cond); letter-spacing: 3px; text-transform: uppercase; padding: 6px 10px 5px; border-radius: 2px; box-shadow: inset 0 0 0 1px #000, 0 1px 0 rgba(255,255,255,0.5); }
-  .plate.w { background: #F6F6F2; color: #1D1F1D; box-shadow: inset 0 0 0 1px #8F958F, 0 1px 0 rgba(255,255,255,0.6); font-size: 12px; letter-spacing: 2.2px; max-width: 118px; overflow:hidden; text-overflow: ellipsis; white-space:nowrap; }
-  .etch { font: 600 8.5px/1 var(--cond); letter-spacing: 1.6px; text-transform: uppercase; color: #4F544F; white-space: nowrap; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
-  .etch.am { color: #9A6A00; } .etch.rd { color: #A82A22; }
-  .pilot { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 0 2px #BFC4BF, 0 0 0 3px #6E736E, 0 1px 2px 3px rgba(0,0,0,0.25); background: radial-gradient(circle at 40% 35%, #8CF0A6, var(--green) 60%, #1C7A30 100%); }
-  .pilot.red { background: radial-gradient(circle at 40% 35%, #FF9A90, var(--red) 60%, #8A1F18 100%); }
-  .pilot.amber { background: radial-gradient(circle at 40% 35%, #FFE08A, var(--amber) 60%, #8A5F00 100%); animation: pf-blink 1.2s steps(2, end) infinite; }
-  .pilot.dim { background: radial-gradient(circle at 40% 35%, #6E736E, #3A3E3A 60%, #202220 100%); }
-  .pilot.sm { width: 9px; height: 9px; box-shadow: 0 0 0 1.5px #BFC4BF, 0 0 0 2.5px #6E736E; }
-  @keyframes pf-blink { 50% { opacity: 0.4; } }
-  @media (prefers-reduced-motion: reduce) { .pilot.amber { animation:none; } }
-  .units { position:absolute; top: 60px; left: 30px; right: 30px; display:flex; flex-direction:column; gap: 8px; }
-  .unit { height: ${UH}px; border-radius: 4px; background: linear-gradient(180deg, #C6CBC6, #BEC3BE); box-shadow: inset 0 0 0 1px #8F958F, inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 0 rgba(255,255,255,0.5);
-          display:grid; grid-template-columns: 124px 60px 200px minmax(0, 1fr); align-items:center; gap: 14px; padding: 0 14px; position:relative; overflow:hidden; }
-  .unit.off { filter: saturate(0.5); }
-  .role { margin-top: 5px; }
-  .gauge { position:relative; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 50% 50%, #FBFBF8 0 60%, #EDEEE9 100%); box-shadow: 0 0 0 2px #E2E5E1, 0 0 0 4px #8F958F, 0 0 0 5px #DADDD9, inset 0 1px 3px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.3); }
-  .gauge .zone { position:absolute; inset: 0; border-radius: 50%; opacity: 0.85; background: conic-gradient(from -135deg, rgba(0,0,0,0) 0 210deg, var(--red) 210deg 270deg, rgba(0,0,0,0) 270deg 360deg); -webkit-mask: radial-gradient(circle, rgba(0,0,0,0) 0 22px, #000 22.5px 26px, rgba(0,0,0,0) 26.5px); }
-  .gauge .tick { position:absolute; left: 50%; top: 50%; width: 1.5px; height: 56px; margin: -28px 0 0 -0.75px; pointer-events:none; }
-  .gauge .tick::before { content:""; position:absolute; left: 0; top: 3px; width: 100%; height: 4px; background: #2B2E2B; }
-  .gauge .tick.m::before { height: 6px; }
-  .gauge .num { position:absolute; font: 700 6px/1 var(--cond); color: #2B2E2B; }
-  .gauge .needle { position:absolute; left: 50%; top: 50%; width: 2px; height: 24px; margin: -22px 0 0 -1px; background: linear-gradient(180deg, #D8342B, #8A1F18); transform-origin: 50% 22px; transform: rotate(var(--a, -135deg)); transition: transform 1.2s cubic-bezier(.3,1.4,.4,1); border-radius: 1px; }
-  .gauge .hub { position:absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #6E736E, #202220); }
-  .gauge .val { position:absolute; left: 0; right: 0; bottom: 7px; text-align:center; font: 700 7px/1 var(--cond); color: #2B2E2B; letter-spacing: 0.5px; }
-  .gauge .unitlbl { position:absolute; left: 0; right: 0; top: 17px; text-align:center; font: 600 5.5px/1 var(--cond); color: #6E736E; letter-spacing: 1px; }
-  .meter { display:flex; flex-direction:column; gap: 6px; min-width: 0; overflow:hidden; }
-  .leds { display:flex; gap: 3px; align-items:flex-end; padding: 3px 4px; border-radius: 3px; background: #1B1D1B; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.5); }
-  .leds i { width: 7px; height: 12px; border-radius: 1px; background: var(--off); }
-  .leds i.on { background: var(--on); box-shadow: 0 0 5px var(--on); }
-  .strips { display:flex; gap: 12px; }
-  .strip { display:flex; align-items:center; gap: 6px; }
-  .strip .dots { display:flex; gap: 2px; padding: 2px 3px; border-radius: 2px; background: #1B1D1B; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.5); }
-  .strip .dots i { width: 5px; height: 7px; border-radius: 1px; background: #3A2E10; }
-  .strip .dots i.on { background: var(--amber); box-shadow: 0 0 4px rgba(242,179,26,0.8); }
-  .stat { display:flex; flex-direction:column; align-items:flex-end; gap: 6px; min-width: 0; }
-  .stat .etch { max-width: 100%; overflow:hidden; text-overflow: ellipsis; }
-  .foot { position:absolute; left: 30px; right: 30px; bottom: 22px; display:flex; justify-content:space-between; }
+export const className = card("dark", W, H, ...POS) + `
+  padding: 16px 18px 12px;
+  display: flex; flex-direction: column;
+
+  .cap { ${caption(T.onDarkMute)} display:flex; justify-content:space-between; }
+  .cap b { font-weight:500; color:${T.onDarkDim}; }
+  .head { font-family:${serif}; font-style:italic; font-size:22px; line-height:1.15; margin: 6px 0 10px; color:${T.onDark}; }
+
+  .grid { flex:1; display:grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 8px; min-height:0; }
+  .tile { position:relative; border-radius: 14px; padding: 10px 11px 9px; background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+          display:flex; flex-direction:column; gap: 6px; min-width:0; }
+  .tile.off { opacity: 0.55; }
+  .name { display:flex; align-items:center; gap:6px; font-size: 12.5px; font-weight: 500; color:${T.onDark}; white-space:nowrap; overflow:hidden; }
+  .name i { flex:none; width:7px; height:7px; border-radius:50%; background:${T.tintGreen}; box-shadow: 0 0 0 3px color-mix(in srgb, ${T.tintGreen} 20%, transparent); }
+  .tile.off .name i { background:${T.tintPink}; box-shadow:none; }
+  .role { font-family:${mono}; font-size:8px; letter-spacing:1px; text-transform:uppercase; color:${T.onDarkMute}; margin-top:-4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .vitals { display:flex; align-items:center; gap: 8px; }
+  .gauge { position:relative; width:44px; height:44px; flex:none; }
+  .gauge svg { width:44px; height:44px; transform: rotate(135deg); }
+  .gauge .val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:${mono}; font-size:10px; color:${T.onDark}; padding-top:2px; }
+  .gauge .val small { font-size:7px; color:${T.onDarkMute}; margin-left:1px; }
+  .spark { flex:1; min-width:0; }
+  .spark svg { width:100%; height:18px; display:block; }
+  .spark .lbl { font-family:${mono}; font-size:8px; letter-spacing:0.8px; color:${T.onDarkMute}; margin-top:2px; white-space:nowrap; }
+  .spark .lbl b { font-weight:500; color:${T.onDarkDim}; }
+  .bars { display:flex; flex-direction:column; gap:4px; }
+  .bar { display:flex; align-items:center; gap:6px; font-family:${mono}; font-size:8px; letter-spacing:0.6px; color:${T.onDarkMute}; }
+  .bar span { width:26px; flex:none; }
+  .bar i { flex:1; height:3px; border-radius:2px; background: rgba(255,255,255,0.10); overflow:hidden; }
+  .bar i b { display:block; height:100%; border-radius:2px; background:${T.onDarkDim}; }
+  .bar em { font-style:normal; width:28px; text-align:right; color:${T.onDarkDim}; }
+  .foot2 { display:flex; justify-content:space-between; font-family:${mono}; font-size:8px; letter-spacing:0.8px; color:${T.onDarkMute}; margin-top:auto; }
+  .flag { font-family:${mono}; font-size:7.5px; letter-spacing:1px; text-transform:uppercase; padding:2px 5px; border-radius:5px; color: var(--tint); background: color-mix(in srgb, var(--tint) 16%, transparent); }
+  .err { font-family:${serif}; font-style:italic; font-size:13px; color:${T.onDarkDim}; margin-top:2px; }
+
+  .foot { display:flex; justify-content:space-between; align-items:baseline; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07);
+          font-family:${mono}; font-size: 8.5px; letter-spacing: 1.2px; text-transform: uppercase; color: ${T.onDarkMute}; }
+  .foot b { font-weight: 500; color: ${T.onDarkDim}; }
+  .mock { color: ${T.tintOrange}; }
 `;
 
-const Leds = ({ frac }) => {
-  const n = 12, lit = Math.round(Math.min(1, Math.max(0, frac)) * n);
-  return <div className="leds">{Array.from({ length: n }, (_, i) => { const on = i < lit; const c = i < 8 ? ["#1a3d20", "#3DD65C"] : i < 11 ? ["#3d2c06", "#FFB000"] : ["#3d0f0c", "#FF3B30"]; return <i key={i} className={on ? "on" : ""} style={{ "--off": c[0], "--on": c[1] }} />; })}</div>;
+const HIST = "pifleet-hist";
+const pushHist = (hosts) => {
+  const h = (recall(HIST) || {}).data || {};
+  hosts.forEach((x) => { if (!x.online) return; const a = (h[x.name] || []).concat([x.load[0]]); h[x.name] = a.slice(-40); });
+  remember(HIST, h); return h;
 };
-const Strip = ({ label, frac }) => { const lit = Math.round(frac * 8); return <div className="strip"><span className="etch">{label}</span><span className="dots">{Array.from({ length: 8 }, (_, i) => <i key={i} className={i < lit ? "on" : ""} />)}</span></div>; };
-const TICKS = Array.from({ length: 11 }, (_, i) => -135 + i * 27);
-const Gauge = ({ temp, on }) => {
-  const t = on && temp ? Math.max(0, Math.min(90, temp)) : 0;
+
+const Gauge = ({ t }) => {
+  const r = 18, c = 2 * Math.PI * r, span = 0.75, frac = Math.min(1, Math.max(0, t / 90));
   return (
-    <div className="gauge" title={on && temp ? `${temp.toFixed(1)} °C` : "no reading"}>
-      <div className="zone" />
-      {TICKS.map((a, i) => <span key={i} className={`tick ${i % 5 === 0 ? "m" : ""}`} style={{ transform: `rotate(${a}deg)` }} />)}
-      <span className="num" style={{ left: 13, top: 40 }}>0</span><span className="num" style={{ left: 24, top: 9 }}>45</span><span className="num" style={{ left: 36, top: 40 }}>90</span>
-      <span className="unitlbl">°C</span>
-      <span className="needle" style={{ "--a": `${-135 + (t / 90) * 270}deg` }} /><span className="hub" />
-      <span className="val">{on && temp ? temp.toFixed(1) : "--.-"}</span>
+    <div className="gauge">
+      <svg viewBox="0 0 44 44">
+        <circle cx="22" cy="22" r={r} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="4" strokeDasharray={`${c * span} ${c}`} strokeLinecap="round" />
+        <circle cx="22" cy="22" r={r} fill="none" stroke={tempTint(t)} strokeWidth="4" strokeDasharray={`${c * span * frac} ${c}`} strokeLinecap="round" />
+      </svg>
+      <div className="val">{Math.round(t)}<small>°C</small></div>
+    </div>
+  );
+};
+const Spark = ({ pts, cores }) => {
+  const w = 80, h = 18, max = Math.max(cores || 1, ...pts, 0.5);
+  const d = pts.length > 1 ? pts.map((v, i) => `${(i / (pts.length - 1)) * w},${h - 1 - (v / max) * (h - 2)}`).join(" ") : `0,${h - 1} ${w},${h - 1}`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      <line x1="0" y1={h - 1 - ((cores || 1) / max) * (h - 2)} x2={w} y2={h - 1 - ((cores || 1) / max) * (h - 2)} stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="2 2" />
+      <polyline points={d} fill="none" stroke={T.tintBlue} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+};
+
+const Tile = ({ h, hist }) => {
+  if (!h.online) return (
+    <div className="tile off">
+      <div className="name"><i />{h.name}</div>
+      <div className="role">{h.role || h.host}</div>
+      <div className="err">Unreachable.</div>
+      <div className="foot2"><span>{(h.error || "no answer").slice(0, 26)}</span></div>
+    </div>
+  );
+  const fl = throttle(h.throttled);
+  return (
+    <div className="tile">
+      <div className="name"><i />{h.name}</div>
+      <div className="role">{h.role || h.model || h.host}</div>
+      <div className="vitals">
+        <Gauge t={h.temp} />
+        <div className="spark">
+          <Spark pts={(hist[h.name] || [h.load[0]])} cores={h.cores} />
+          <div className="lbl"><b>{h.load[0].toFixed(2)}</b> load · {h.cores}c</div>
+        </div>
+      </div>
+      <div className="bars">
+        <div className="bar"><span>mem</span><i><b style={{ width: `${pct(h.mem_total - h.mem_avail, h.mem_total)}%` }} /></i><em>{pct(h.mem_total - h.mem_avail, h.mem_total)}%</em></div>
+        <div className="bar"><span>disk</span><i><b style={{ width: `${pct(h.disk_total - h.disk_avail, h.disk_total)}%` }} /></i><em>{fmtGB(h.disk_avail)}</em></div>
+      </div>
+      <div className="foot2"><span>up {fmtUp(h.uptime)}</span>{fl ? <span className="flag" style={{ "--tint": fl.tint }}>{fl.label}</span> : <span>{h.ms} ms</span>}</div>
     </div>
   );
 };
 
-const Unit = ({ h }) => {
-  const th = h.online ? throttle(h.throttled) : null;
-  return (
-    <div className={`unit ${h.online ? "" : "off"}`}>
-      <div><span className="plate w" title={h.host}>{h.name}</span><div className="etch role">{h.role || h.model || h.host}</div></div>
-      <Gauge temp={h.online ? h.temp : 0} on={h.online} />
-      <div className="meter">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Leds frac={h.online ? (h.load[0] || 0) / Math.max(1, h.cores || 1) : 0} /><span className="etch">{h.online ? (h.load[0] || 0).toFixed(2) : "--"} load · {h.cores || "-"}c</span></div>
-        <div className="strips"><Strip label="mem" frac={h.online ? pct(h.mem_total - h.mem_avail, h.mem_total) : 0} /><Strip label="disk" frac={h.online ? pct(h.disk_total - h.disk_avail, h.disk_total) : 0} /></div>
-      </div>
-      <div className="stat">
-        <span className={`pilot ${!h.online ? "red" : th === "now" ? "amber" : ""}`} />
-        <span className="etch">{h.online ? `up ${fmtUp(h.uptime)}` : "no link"}</span>
-        <span className={`etch ${th ? "am" : !h.online ? "rd" : ""}`}>{h.online ? (th === "now" ? "throttled" : th === "before" ? "was throttled" : `${h.ms} ms`) : (h.error || "unreachable").slice(0, 18)}</span>
-      </div>
-    </div>
-  );
-};
-
-const Rack = ({ data, staleTs, mock }) => {
-  const hosts = (data.hosts || []).slice(0, 6); const up = hosts.filter((h) => h.online).length;
+const Fleet = ({ data, staleTs, mock }) => {
+  const hosts = data.hosts || []; const hist = staleTs || mock || data.demo ? ((recall(HIST) || {}).data || {}) : pushHist(hosts);
+  const up = hosts.filter((h) => h.online).length;
   return (
     <div>
-      <div className="door" /><div className="hazard" />
       <DragHandle k={KEY} />
       <ResizeHandle k={KEY} />
-      <span className="screw" style={{ top: 22, left: 16 }} /><span className="screw" style={{ top: 22, right: 16 }} /><span className="screw" style={{ bottom: 16, left: 16 }} /><span className="screw" style={{ bottom: 16, right: 16 }} />
-      <div className="head"><div className="left"><span className="plate">Pi fleet</span><span className={`pilot sm ${hosts.length && up ? "" : "dim"}`} /><span className="etch">power</span></div><span className="etch">{hosts.length ? `${up} of ${hosts.length} online` : "no units"}{staleTs ? ` · stale ${clockStamp(staleTs)}` : ""}</span></div>
-      <div className="units">{hosts.length ? hosts.map((h) => <Unit key={h.name} h={h} />) : <div className="etch" style={{ padding: 20 }}>Add hosts to ~/.config/widgetsuite/pi-fleet.json and refresh.</div>}</div>
-      <div className="foot"><span className="etch">ssh · read-only · every {data.interval || 30}s</span><span className={`etch ${data.demo || mock ? "am" : ""}`}>{data.demo || mock ? "sample units · see setup" : `probed ${clockStamp((data.now || Date.now() / 1000) * 1000)}`}</span></div>
+      {staleTs ? <Stale ts={staleTs} /> : null}
+      <div className="cap"><span>Pi fleet</span><span><b>{up}</b> of <b>{hosts.length}</b> online</span></div>
+      <div className="head">{headline(hosts, data.demo)}</div>
+      <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, hosts.length))}, 1fr)` }}>
+        {hosts.length ? hosts.slice(0, 6).map((h) => <Tile key={h.name} h={h} hist={hist} />) : <Empty text="Add hosts to ~/.config/widgetsuite/pi-fleet.json, then refresh." />}
+      </div>
+      <div className="foot">
+        <span>ssh · read-only · every <b>{data.interval || 30}s</b></span>
+        <span>{data.demo ? <span className="mock">sample data · see setup</span> : clockStamp((data.now || Date.now() / 1000) * 1000)}</span>
+      </div>
     </div>
   );
 };
 
 export const render = (props) => {
   const r = resolve(KEY, props, parse, MOCK);
-  if (r.loading) return <Skel tint={T.tintOrange} />;
-  return <Rack data={r.data} staleTs={r.staleTs} mock={r.mock} />;
+  if (r.loading) return <Skel tint={T.tintBlue} />;
+  return <Fleet data={r.data} staleTs={r.staleTs} mock={r.mock} />;
 };
