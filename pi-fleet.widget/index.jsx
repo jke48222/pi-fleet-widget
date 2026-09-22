@@ -131,7 +131,7 @@ const card = (variant, w, h, x = 0, y = 0) => `
   .ws-drag  { position:absolute; top:6px; left:6px; z-index:30;
               width:18px; height:18px; border-radius:6px;
               display:flex; align-items:center; justify-content:center;
-              font-size:11px; line-height:1; cursor:grab; opacity:0.22;
+              font-size:11px; line-height:1; cursor:grab; opacity:0.42;
               transition:opacity .15s ease; user-select:none;
               -webkit-user-select:none;
               color:${variant === "dark" ? T.onDarkMute : T.inkMute};
@@ -143,7 +143,7 @@ const card = (variant, w, h, x = 0, y = 0) => `
   .ws-resize { position:absolute; bottom:5px; right:5px; z-index:30;
                width:16px; height:16px; border-radius:5px;
                display:flex; align-items:center; justify-content:center;
-               font-size:11px; line-height:1; cursor:nwse-resize; opacity:0.22;
+               font-size:11px; line-height:1; cursor:nwse-resize; opacity:0.42;
                transition:opacity .15s ease; user-select:none;
                -webkit-user-select:none;
                color:${variant === "dark" ? T.onDarkMute : T.inkMute};
@@ -438,7 +438,7 @@ const throttle = (hex) => { const v = parseInt(hex || "0", 16) || 0; return (v &
 
 const SAVED_HOSTS = (((recall(KEY) || {}).data || {}).hosts || []).length;
 const UNITS = Math.max(3, Math.min(6, SAVED_HOSTS || 3));
-const W = 580, UH = 60, H = 92 + UNITS * (UH + 8);
+const W = 640, UH = 60, H = 92 + UNITS * (UH + 8);
 
 export const className = card("dark", W, H, ...POS) + `
   @font-face { font-family: "DSEG7"; src: url("${FONTS}/DSEG7Classic-Bold.woff2") format("woff2"); font-weight: 700; }
@@ -463,7 +463,7 @@ export const className = card("dark", W, H, ...POS) + `
   .units { position:absolute; top: 36px; left: 30px; right: 30px; display:flex; flex-direction:column; gap: 8px; }
   .unit { height: ${UH}px; border-radius: 5px; background: linear-gradient(180deg, #1F2125 0%, #17181C 100%);
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px #0c0d0f, 0 1px 0 rgba(255,255,255,0.05);
-          display:grid; grid-template-columns: 112px 108px 1fr 100px; align-items:center; gap: 12px; padding: 0 12px; position:relative; }
+          display:grid; grid-template-columns: 112px 104px 196px minmax(0, 1fr); align-items:center; gap: 12px; padding: 0 12px; position:relative; overflow:hidden; }
   .unit.off { filter: saturate(0.6); }
   .dymo { display:inline-block; max-width: 110px; overflow:hidden; text-overflow: ellipsis; white-space:nowrap; background: linear-gradient(180deg, #202020 0%, #0E0E0E 100%); color: #F6F3EC;
           font: 800 11px/1 "Rubik", "Arial Rounded MT Bold", sans-serif; letter-spacing: 1.8px; text-transform:uppercase; padding: 6px 9px 5px; border-radius: 2px;
@@ -474,7 +474,7 @@ export const className = card("dark", W, H, ...POS) + `
   .seg .g { position:absolute; left: 8px; top: 6px; font: 700 22px/1 "DSEG7", monospace; color: rgba(255,176,0,0.08); }
   .seg .u { font: 700 9px/1 var(--cond); color: rgba(255,176,0,0.75); letter-spacing: 1px; margin-left: 4px; }
   .unit.off .seg .v { color: rgba(255,176,0,0.28); text-shadow:none; }
-  .meter { display:flex; flex-direction:column; gap: 5px; }
+  .meter { display:flex; flex-direction:column; gap: 5px; min-width: 0; overflow:hidden; }
   .leds { display:flex; gap: 3px; align-items:flex-end; }
   .leds i { width: 7px; height: 13px; border-radius: 1.5px; background: var(--off); box-shadow: inset 0 1px 1px rgba(0,0,0,0.6); }
   .leds i.on { background: var(--on); box-shadow: 0 0 6px var(--on), inset 0 1px 0 rgba(255,255,255,0.35); }
@@ -483,7 +483,8 @@ export const className = card("dark", W, H, ...POS) + `
   .strip .dots { display:flex; gap: 2px; }
   .strip .dots i { width: 5px; height: 7px; border-radius: 1px; background: #2a2412; box-shadow: inset 0 1px 1px rgba(0,0,0,0.6); }
   .strip .dots i.on { background: var(--amber); box-shadow: 0 0 4px rgba(255,176,0,0.7); }
-  .stat { display:flex; flex-direction:column; align-items:flex-end; gap: 5px; }
+  .stat { display:flex; flex-direction:column; align-items:flex-end; gap: 5px; min-width: 0; }
+  .stat .etch { max-width: 100%; overflow:hidden; text-overflow: ellipsis; }
   .lamp { width: 11px; height: 11px; border-radius:50%; background: radial-gradient(circle at 40% 35%, #7cf59a, var(--green) 60%, #1c7a30 100%); box-shadow: 0 0 10px rgba(61,214,92,0.7), inset 0 0 0 1px rgba(0,0,0,0.3); }
   .lamp.red { background: radial-gradient(circle at 40% 35%, #ff8a80, var(--red) 60%, #8a1f18 100%); box-shadow: 0 0 10px rgba(255,59,48,0.6), inset 0 0 0 1px rgba(0,0,0,0.3); }
   .lamp.amber { background: radial-gradient(circle at 40% 35%, #ffd76a, var(--amber) 60%, #8a5f00 100%); box-shadow: 0 0 10px rgba(255,176,0,0.7); animation: pf-blink 1.2s steps(2, end) infinite; }
