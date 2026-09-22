@@ -7,7 +7,10 @@
 [Übersicht gallery](https://tracesof.net/uebersicht-widgets/) · [Widget suite](https://github.com/jke48222/widget-suite) · [Download](https://github.com/jke48222/pi-fleet-widget/releases/latest) · [Setup guide](docs/SETUP.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 A widget for [Übersicht](http://tracesof.net/uebersicht/), self-contained in
-`index.jsx`. Every refresh it opens an SSH connection to each Pi in parallel
+`index.jsx`. It is a rack: an anodized panel with corner screws and one 1U
+faceplate per Pi, each with an embossed tape label, an amber seven-segment
+temperature readout, an LED bar graph for load, LED strips for memory and
+disk, a status lamp, and etched uptime. Every refresh it opens an SSH connection to each Pi in parallel
 (key auth, `BatchMode`, four-second connect timeout) and sends a read-only shell
 snippet over stdin that reports the SoC temperature, load averages, memory,
 root disk, uptime, model, and `vcgencmd get_throttled`. Each host becomes a
@@ -82,6 +85,7 @@ since boot.
 ## Bundled files
 
 - `pi-fleet.widget/index.jsx` — the widget, helper embedded
+- `pi-fleet.widget/fonts/` — DSEG7 Classic (seven-segment), Barlow Condensed, Rubik; all SIL Open Font License, see `fonts/OFL.txt`
 - `setup/pi-fleet.py` — the same helper as a file
 - `setup/pi-fleet.example.json` — a starting config
 - `setup/configure.sh` — writes the config on install if none exists
