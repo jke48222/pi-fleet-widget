@@ -1,0 +1,8 @@
+{
+  "interval": 30,
+  "hosts": [
+    { "name": "wall",   "role": "LED matrix",     "host": "wall.local",   "user": "pi" },
+    { "name": "parmco", "role": "motor control",  "host": "parmco.local", "user": "pi" },
+    { "name": "car",    "role": "audio tracking", "host": "car.local",    "user": "pi", "port": 22 }
+  ]
+}
