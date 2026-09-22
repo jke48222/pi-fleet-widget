@@ -345,10 +345,11 @@ const resolve = (key, props, parse, mock) => {
 };
 // --- End inlined design system ---
 
-// pi-fleet — your Raspberry Pis as a rack of hardware: one 1U faceplate per
-// host with an embossed tape label, a seven-segment temperature readout, an
-// LED bar graph for load, small LED strips for memory and disk, a status lamp,
-// and etched uptime. Probed over SSH with key auth and short timeouts; the
+// pi-fleet — your Raspberry Pis as an industrial control cabinet: a light-grey
+// (RAL 7035) enclosure with a hazard stripe and hex screws, one sub-panel per
+// host with an engraved traffolyte name label, an analog temperature gauge with
+// a red zone, an LED bargraph for load, LED strips for memory and disk, a
+// chrome pilot lamp, and engraved uptime. Probed over SSH with key auth and short timeouts; the
 // helper is embedded below and is read-only. Hosts live in
 // ~/.config/widgetsuite/pi-fleet.json; with no config the rack shows labeled
 // sample units so it is never blank.
@@ -438,82 +439,97 @@ const throttle = (hex) => { const v = parseInt(hex || "0", 16) || 0; return (v &
 
 const SAVED_HOSTS = (((recall(KEY) || {}).data || {}).hosts || []).length;
 const UNITS = Math.max(3, Math.min(6, SAVED_HOSTS || 3));
-const W = 640, UH = 60, H = 92 + UNITS * (UH + 8);
+const W = 640, UH = 64, H = 100 + UNITS * (UH + 8);
 
-export const className = card("dark", W, H, ...POS) + `
-  @font-face { font-family: "DSEG7"; src: url("${FONTS}/DSEG7Classic-Bold.woff2") format("woff2"); font-weight: 700; }
+export const className = card("light", W, H, ...POS) + `
   @font-face { font-family: "Barlow Condensed"; src: url("${FONTS}/BarlowCondensed-600.woff2") format("woff2"); font-weight: 600; }
   @font-face { font-family: "Barlow Condensed"; src: url("${FONTS}/BarlowCondensed-700.woff2") format("woff2"); font-weight: 700; }
-  @font-face { font-family: "Rubik"; src: url("${FONTS}/Rubik-800.woff2") format("woff2"); font-weight: 800; }
-  --cond: "Barlow Condensed", "Arial Narrow", sans-serif; --etch: #A7ABB3; --amber: #FFB000; --green: #3DD65C; --red: #FF3B30;
-  padding: 0; border-radius: 10px; backdrop-filter: none; overflow: hidden; font-family: var(--cond); user-select:none; -webkit-user-select:none;
-  background: linear-gradient(180deg, #3A3D43 0%, #2C2E33 6%, #26282D 94%, #1B1C20 100%);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14), 0 0 0 1px #0d0e10;
-  &::before { content:""; position:absolute; inset:0; pointer-events:none; opacity: 0.5;
-    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, rgba(0,0,0,0) 1px 3px); }
-  .ws-drag { top: 8px; left: 30px; }
-  .screw { position:absolute; width: 9px; height: 9px; border-radius:50%; background: radial-gradient(circle at 40% 35%, #9a9ea6, #45484e 65%, #2a2c30 100%); box-shadow: 0 1px 1px rgba(255,255,255,0.12), inset 0 0 0 1px #131416; }
-  .screw::after { content:""; position:absolute; left: 1px; right: 1px; top: 4px; height: 1px; background: #131416; transform: rotate(-30deg); }
-  .rail { position:absolute; top: 0; bottom: 0; width: 22px; background: linear-gradient(90deg, rgba(0,0,0,0.25), rgba(0,0,0,0)); }
-  .rail.r { right:0; background: linear-gradient(270deg, rgba(0,0,0,0.25), rgba(0,0,0,0)); }
-  .head { position:absolute; top: 12px; left: 30px; right: 30px; display:flex; justify-content:space-between; align-items:baseline; }
-  .etch { font: 700 10px/1 var(--cond); letter-spacing: 3px; text-transform:uppercase; color: var(--etch); text-shadow: 0 -1px 0 rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.06); }
-  .etch.s { font-weight: 600; font-size: 8px; letter-spacing: 1.6px; color: #7E838C; white-space: nowrap; }
-  .etch.am { color: var(--amber); }
-  .units { position:absolute; top: 36px; left: 30px; right: 30px; display:flex; flex-direction:column; gap: 8px; }
-  .unit { height: ${UH}px; border-radius: 5px; background: linear-gradient(180deg, #1F2125 0%, #17181C 100%);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px #0c0d0f, 0 1px 0 rgba(255,255,255,0.05);
-          display:grid; grid-template-columns: 112px 104px 196px minmax(0, 1fr); align-items:center; gap: 12px; padding: 0 12px; position:relative; overflow:hidden; }
-  .unit.off { filter: saturate(0.6); }
-  .dymo { display:inline-block; max-width: 110px; overflow:hidden; text-overflow: ellipsis; white-space:nowrap; background: linear-gradient(180deg, #202020 0%, #0E0E0E 100%); color: #F6F3EC;
-          font: 800 11px/1 "Rubik", "Arial Rounded MT Bold", sans-serif; letter-spacing: 1.8px; text-transform:uppercase; padding: 6px 9px 5px; border-radius: 2px;
-          transform: rotate(-1.4deg); box-shadow: 0 1px 2px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.14); text-shadow: 0 -1px 0 #000, 0 1px 0 rgba(255,255,255,0.18); }
+  --cond: "Barlow Condensed", "Arial Narrow", sans-serif; --ink: #2B2E2B; --panel: #CFD3CE; --green: #2FBF5A; --red: #E0352B; --amber: #F2B31A;
+  padding: 0; border-radius: 6px; backdrop-filter: none; overflow: hidden; font-family: var(--cond); user-select:none; -webkit-user-select:none;
+  background: linear-gradient(180deg, #D9DCD8 0%, var(--panel) 50%, #C6CBC6 100%);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px #8F958F, inset 0 -2px 0 rgba(0,0,0,0.15);
+  &::before { content:""; position:absolute; inset:0; pointer-events:none; opacity: 0.35; mix-blend-mode: multiply; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"); }
+  .door { position:absolute; inset: 10px; border-radius: 4px; pointer-events:none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.5); }
+  .hazard { position:absolute; left: 11px; right: 11px; top: 11px; height: 6px; border-radius: 3px 3px 0 0; pointer-events:none; background: repeating-linear-gradient(45deg, #F2C230 0 9px, #1A1A1A 9px 18px); opacity: 0.9; }
+  .ws-drag { top: 22px; left: 30px; color: #4a4e4a; background: rgba(0,0,0,0.06); } .ws-resize { bottom: 14px; right: 30px; color: #4a4e4a; background: rgba(0,0,0,0.06); }
+  .screw { position:absolute; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #9EA39E, #4A4E4A 60%, #2A2C2A 100%); box-shadow: 0 1px 0 rgba(255,255,255,0.5), inset 0 0 0 1px #202220; }
+  .screw::after { content:""; position:absolute; left: 3px; top: 3px; width: 4px; height: 4px; background: #111; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+  .head { position:absolute; top: 26px; left: 30px; right: 30px; display:flex; justify-content:space-between; align-items:center; }
+  .head .left { display:flex; align-items:center; gap: 12px; }
+  .plate { display:inline-block; background: #1D1F1D; color: #F4F4F0; font: 700 11px/1 var(--cond); letter-spacing: 3px; text-transform: uppercase; padding: 6px 10px 5px; border-radius: 2px; box-shadow: inset 0 0 0 1px #000, 0 1px 0 rgba(255,255,255,0.5); }
+  .plate.w { background: #F6F6F2; color: #1D1F1D; box-shadow: inset 0 0 0 1px #8F958F, 0 1px 0 rgba(255,255,255,0.6); font-size: 12px; letter-spacing: 2.2px; max-width: 118px; overflow:hidden; text-overflow: ellipsis; white-space:nowrap; }
+  .etch { font: 600 8.5px/1 var(--cond); letter-spacing: 1.6px; text-transform: uppercase; color: #4F544F; white-space: nowrap; text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+  .etch.am { color: #9A6A00; } .etch.rd { color: #A82A22; }
+  .pilot { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto; box-shadow: 0 0 0 2px #BFC4BF, 0 0 0 3px #6E736E, 0 1px 2px 3px rgba(0,0,0,0.25); background: radial-gradient(circle at 40% 35%, #8CF0A6, var(--green) 60%, #1C7A30 100%); }
+  .pilot.red { background: radial-gradient(circle at 40% 35%, #FF9A90, var(--red) 60%, #8A1F18 100%); }
+  .pilot.amber { background: radial-gradient(circle at 40% 35%, #FFE08A, var(--amber) 60%, #8A5F00 100%); animation: pf-blink 1.2s steps(2, end) infinite; }
+  .pilot.dim { background: radial-gradient(circle at 40% 35%, #6E736E, #3A3E3A 60%, #202220 100%); }
+  .pilot.sm { width: 9px; height: 9px; box-shadow: 0 0 0 1.5px #BFC4BF, 0 0 0 2.5px #6E736E; }
+  @keyframes pf-blink { 50% { opacity: 0.4; } }
+  @media (prefers-reduced-motion: reduce) { .pilot.amber { animation:none; } }
+  .units { position:absolute; top: 60px; left: 30px; right: 30px; display:flex; flex-direction:column; gap: 8px; }
+  .unit { height: ${UH}px; border-radius: 4px; background: linear-gradient(180deg, #C6CBC6, #BEC3BE); box-shadow: inset 0 0 0 1px #8F958F, inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 0 rgba(255,255,255,0.5);
+          display:grid; grid-template-columns: 124px 60px 200px minmax(0, 1fr); align-items:center; gap: 14px; padding: 0 14px; position:relative; overflow:hidden; }
+  .unit.off { filter: saturate(0.5); }
   .role { margin-top: 5px; }
-  .seg { position:relative; display:inline-flex; align-items:baseline; gap: 2px; background: #130806; border-radius: 4px; padding: 6px 8px 4px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.85), 0 0 0 1px #0a0a0a, 0 1px 0 rgba(255,255,255,0.05); }
-  .seg .v { font: 700 22px/1 "DSEG7", monospace; color: var(--amber); text-shadow: 0 0 9px rgba(255,176,0,0.55); position:relative; }
-  .seg .g { position:absolute; left: 8px; top: 6px; font: 700 22px/1 "DSEG7", monospace; color: rgba(255,176,0,0.08); }
-  .seg .u { font: 700 9px/1 var(--cond); color: rgba(255,176,0,0.75); letter-spacing: 1px; margin-left: 4px; }
-  .unit.off .seg .v { color: rgba(255,176,0,0.28); text-shadow:none; }
-  .meter { display:flex; flex-direction:column; gap: 5px; min-width: 0; overflow:hidden; }
-  .leds { display:flex; gap: 3px; align-items:flex-end; }
-  .leds i { width: 7px; height: 13px; border-radius: 1.5px; background: var(--off); box-shadow: inset 0 1px 1px rgba(0,0,0,0.6); }
-  .leds i.on { background: var(--on); box-shadow: 0 0 6px var(--on), inset 0 1px 0 rgba(255,255,255,0.35); }
-  .strips { display:flex; gap: 14px; }
+  .gauge { position:relative; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 50% 50%, #FBFBF8 0 60%, #EDEEE9 100%); box-shadow: 0 0 0 2px #E2E5E1, 0 0 0 4px #8F958F, 0 0 0 5px #DADDD9, inset 0 1px 3px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.3); }
+  .gauge .zone { position:absolute; inset: 0; border-radius: 50%; opacity: 0.85; background: conic-gradient(from -135deg, rgba(0,0,0,0) 0 210deg, var(--red) 210deg 270deg, rgba(0,0,0,0) 270deg 360deg); -webkit-mask: radial-gradient(circle, rgba(0,0,0,0) 0 22px, #000 22.5px 26px, rgba(0,0,0,0) 26.5px); }
+  .gauge .tick { position:absolute; left: 50%; top: 50%; width: 1.5px; height: 56px; margin: -28px 0 0 -0.75px; pointer-events:none; }
+  .gauge .tick::before { content:""; position:absolute; left: 0; top: 3px; width: 100%; height: 4px; background: #2B2E2B; }
+  .gauge .tick.m::before { height: 6px; }
+  .gauge .num { position:absolute; font: 700 6px/1 var(--cond); color: #2B2E2B; }
+  .gauge .needle { position:absolute; left: 50%; top: 50%; width: 2px; height: 24px; margin: -22px 0 0 -1px; background: linear-gradient(180deg, #D8342B, #8A1F18); transform-origin: 50% 22px; transform: rotate(var(--a, -135deg)); transition: transform 1.2s cubic-bezier(.3,1.4,.4,1); border-radius: 1px; }
+  .gauge .hub { position:absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #6E736E, #202220); }
+  .gauge .val { position:absolute; left: 0; right: 0; bottom: 7px; text-align:center; font: 700 7px/1 var(--cond); color: #2B2E2B; letter-spacing: 0.5px; }
+  .gauge .unitlbl { position:absolute; left: 0; right: 0; top: 17px; text-align:center; font: 600 5.5px/1 var(--cond); color: #6E736E; letter-spacing: 1px; }
+  .meter { display:flex; flex-direction:column; gap: 6px; min-width: 0; overflow:hidden; }
+  .leds { display:flex; gap: 3px; align-items:flex-end; padding: 3px 4px; border-radius: 3px; background: #1B1D1B; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.5); }
+  .leds i { width: 7px; height: 12px; border-radius: 1px; background: var(--off); }
+  .leds i.on { background: var(--on); box-shadow: 0 0 5px var(--on); }
+  .strips { display:flex; gap: 12px; }
   .strip { display:flex; align-items:center; gap: 6px; }
-  .strip .dots { display:flex; gap: 2px; }
-  .strip .dots i { width: 5px; height: 7px; border-radius: 1px; background: #2a2412; box-shadow: inset 0 1px 1px rgba(0,0,0,0.6); }
-  .strip .dots i.on { background: var(--amber); box-shadow: 0 0 4px rgba(255,176,0,0.7); }
-  .stat { display:flex; flex-direction:column; align-items:flex-end; gap: 5px; min-width: 0; }
+  .strip .dots { display:flex; gap: 2px; padding: 2px 3px; border-radius: 2px; background: #1B1D1B; box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.5); }
+  .strip .dots i { width: 5px; height: 7px; border-radius: 1px; background: #3A2E10; }
+  .strip .dots i.on { background: var(--amber); box-shadow: 0 0 4px rgba(242,179,26,0.8); }
+  .stat { display:flex; flex-direction:column; align-items:flex-end; gap: 6px; min-width: 0; }
   .stat .etch { max-width: 100%; overflow:hidden; text-overflow: ellipsis; }
-  .lamp { width: 11px; height: 11px; border-radius:50%; background: radial-gradient(circle at 40% 35%, #7cf59a, var(--green) 60%, #1c7a30 100%); box-shadow: 0 0 10px rgba(61,214,92,0.7), inset 0 0 0 1px rgba(0,0,0,0.3); }
-  .lamp.red { background: radial-gradient(circle at 40% 35%, #ff8a80, var(--red) 60%, #8a1f18 100%); box-shadow: 0 0 10px rgba(255,59,48,0.6), inset 0 0 0 1px rgba(0,0,0,0.3); }
-  .lamp.amber { background: radial-gradient(circle at 40% 35%, #ffd76a, var(--amber) 60%, #8a5f00 100%); box-shadow: 0 0 10px rgba(255,176,0,0.7); animation: pf-blink 1.2s steps(2, end) infinite; }
-  @keyframes pf-blink { 50% { opacity: 0.35; box-shadow: none; } }
-  @media (prefers-reduced-motion: reduce) { .lamp.amber { animation:none; } }
-  .foot { position:absolute; left: 30px; right: 30px; bottom: 12px; display:flex; justify-content:space-between; }
+  .foot { position:absolute; left: 30px; right: 30px; bottom: 22px; display:flex; justify-content:space-between; }
 `;
 
 const Leds = ({ frac }) => {
   const n = 12, lit = Math.round(Math.min(1, Math.max(0, frac)) * n);
   return <div className="leds">{Array.from({ length: n }, (_, i) => { const on = i < lit; const c = i < 8 ? ["#1a3d20", "#3DD65C"] : i < 11 ? ["#3d2c06", "#FFB000"] : ["#3d0f0c", "#FF3B30"]; return <i key={i} className={on ? "on" : ""} style={{ "--off": c[0], "--on": c[1] }} />; })}</div>;
 };
-const Strip = ({ label, frac }) => { const lit = Math.round(frac * 8); return <div className="strip"><span className="etch s">{label}</span><span className="dots">{Array.from({ length: 8 }, (_, i) => <i key={i} className={i < lit ? "on" : ""} />)}</span></div>; };
+const Strip = ({ label, frac }) => { const lit = Math.round(frac * 8); return <div className="strip"><span className="etch">{label}</span><span className="dots">{Array.from({ length: 8 }, (_, i) => <i key={i} className={i < lit ? "on" : ""} />)}</span></div>; };
+const TICKS = Array.from({ length: 11 }, (_, i) => -135 + i * 27);
+const Gauge = ({ temp, on }) => {
+  const t = on && temp ? Math.max(0, Math.min(90, temp)) : 0;
+  return (
+    <div className="gauge" title={on && temp ? `${temp.toFixed(1)} °C` : "no reading"}>
+      <div className="zone" />
+      {TICKS.map((a, i) => <span key={i} className={`tick ${i % 5 === 0 ? "m" : ""}`} style={{ transform: `rotate(${a}deg)` }} />)}
+      <span className="num" style={{ left: 13, top: 40 }}>0</span><span className="num" style={{ left: 24, top: 9 }}>45</span><span className="num" style={{ left: 36, top: 40 }}>90</span>
+      <span className="unitlbl">°C</span>
+      <span className="needle" style={{ "--a": `${-135 + (t / 90) * 270}deg` }} /><span className="hub" />
+      <span className="val">{on && temp ? temp.toFixed(1) : "--.-"}</span>
+    </div>
+  );
+};
 
 const Unit = ({ h }) => {
   const th = h.online ? throttle(h.throttled) : null;
-  const temp = h.online && h.temp ? h.temp.toFixed(1) : "--.-";
   return (
     <div className={`unit ${h.online ? "" : "off"}`}>
-      <div><span className="dymo" title={h.host}>{h.name}</span><div className="etch s role">{h.role || h.model || h.host}</div></div>
-      <div><span className="seg"><span className="g">88.8</span><span className="v">{temp}</span><span className="u">°C</span></span></div>
+      <div><span className="plate w" title={h.host}>{h.name}</span><div className="etch role">{h.role || h.model || h.host}</div></div>
+      <Gauge temp={h.online ? h.temp : 0} on={h.online} />
       <div className="meter">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Leds frac={h.online ? (h.load[0] || 0) / Math.max(1, h.cores || 1) : 0} /><span className="etch s">{h.online ? (h.load[0] || 0).toFixed(2) : "--"} load · {h.cores || "-"}c</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Leds frac={h.online ? (h.load[0] || 0) / Math.max(1, h.cores || 1) : 0} /><span className="etch">{h.online ? (h.load[0] || 0).toFixed(2) : "--"} load · {h.cores || "-"}c</span></div>
         <div className="strips"><Strip label="mem" frac={h.online ? pct(h.mem_total - h.mem_avail, h.mem_total) : 0} /><Strip label="disk" frac={h.online ? pct(h.disk_total - h.disk_avail, h.disk_total) : 0} /></div>
       </div>
       <div className="stat">
-        <span className={`lamp ${!h.online ? "red" : th === "now" ? "amber" : ""}`} />
-        <span className="etch s">{h.online ? `up ${fmtUp(h.uptime)}` : "no link"}</span>
-        <span className={`etch s ${th ? "am" : ""}`}>{h.online ? (th === "now" ? "throttled" : th === "before" ? "was throttled" : `${h.ms} ms`) : (h.error || "unreachable").slice(0, 18)}</span>
+        <span className={`pilot ${!h.online ? "red" : th === "now" ? "amber" : ""}`} />
+        <span className="etch">{h.online ? `up ${fmtUp(h.uptime)}` : "no link"}</span>
+        <span className={`etch ${th ? "am" : !h.online ? "rd" : ""}`}>{h.online ? (th === "now" ? "throttled" : th === "before" ? "was throttled" : `${h.ms} ms`) : (h.error || "unreachable").slice(0, 18)}</span>
       </div>
     </div>
   );
@@ -523,13 +539,13 @@ const Rack = ({ data, staleTs, mock }) => {
   const hosts = (data.hosts || []).slice(0, 6); const up = hosts.filter((h) => h.online).length;
   return (
     <div>
+      <div className="door" /><div className="hazard" />
       <DragHandle k={KEY} />
       <ResizeHandle k={KEY} />
-      <span className="rail" /><span className="rail r" />
-      <span className="screw" style={{ top: 9, left: 9 }} /><span className="screw" style={{ top: 9, right: 9 }} /><span className="screw" style={{ bottom: 9, left: 9 }} /><span className="screw" style={{ bottom: 9, right: 9 }} />
-      <div className="head"><span className="etch">Pi fleet</span><span className="etch s">{hosts.length ? `${up} of ${hosts.length} online` : "no units"}{staleTs ? ` · stale ${clockStamp(staleTs)}` : ""}</span></div>
-      <div className="units">{hosts.length ? hosts.map((h) => <Unit key={h.name} h={h} />) : <div className="etch s" style={{ padding: 20 }}>Add hosts to ~/.config/widgetsuite/pi-fleet.json and refresh.</div>}</div>
-      <div className="foot"><span className="etch s">ssh · read-only · every {data.interval || 30}s</span><span className={`etch s ${data.demo || mock ? "am" : ""}`}>{data.demo || mock ? "sample units · see setup" : `probed ${clockStamp((data.now || Date.now() / 1000) * 1000)}`}</span></div>
+      <span className="screw" style={{ top: 22, left: 16 }} /><span className="screw" style={{ top: 22, right: 16 }} /><span className="screw" style={{ bottom: 16, left: 16 }} /><span className="screw" style={{ bottom: 16, right: 16 }} />
+      <div className="head"><div className="left"><span className="plate">Pi fleet</span><span className={`pilot sm ${hosts.length && up ? "" : "dim"}`} /><span className="etch">power</span></div><span className="etch">{hosts.length ? `${up} of ${hosts.length} online` : "no units"}{staleTs ? ` · stale ${clockStamp(staleTs)}` : ""}</span></div>
+      <div className="units">{hosts.length ? hosts.map((h) => <Unit key={h.name} h={h} />) : <div className="etch" style={{ padding: 20 }}>Add hosts to ~/.config/widgetsuite/pi-fleet.json and refresh.</div>}</div>
+      <div className="foot"><span className="etch">ssh · read-only · every {data.interval || 30}s</span><span className={`etch ${data.demo || mock ? "am" : ""}`}>{data.demo || mock ? "sample units · see setup" : `probed ${clockStamp((data.now || Date.now() / 1000) * 1000)}`}</span></div>
     </div>
   );
 };

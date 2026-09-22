@@ -1,16 +1,17 @@
 # pi-fleet
 
-> Your Raspberry Pis at a glance: reachability, SoC temperature, load, memory, disk, uptime, and throttling.
+> Your Raspberry Pis on an industrial control cabinet: reachability, temperature gauges, load, memory, disk, uptime, and throttling.
 
 [![Release](https://img.shields.io/github/v/release/jke48222/pi-fleet-widget?label=release)](https://github.com/jke48222/pi-fleet-widget/releases/latest) [![License: MIT](https://img.shields.io/github/license/jke48222/pi-fleet-widget)](LICENSE) ![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey)
 
 [Übersicht gallery](https://tracesof.net/uebersicht-widgets/) · [Widget suite](https://github.com/jke48222/widget-suite) · [Download](https://github.com/jke48222/pi-fleet-widget/releases/latest) · [Setup guide](docs/SETUP.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 A widget for [Übersicht](http://tracesof.net/uebersicht/), self-contained in
-`index.jsx`. It is a rack: an anodized panel with corner screws and one 1U
-faceplate per Pi, each with an embossed tape label, an amber seven-segment
-temperature readout, an LED bar graph for load, LED strips for memory and
-disk, a status lamp, and etched uptime. Every refresh it opens an SSH connection to each Pi in parallel
+`index.jsx`. It is an industrial control cabinet: a light-grey (RAL 7035)
+enclosure with a hazard stripe and hex screws, one sub-panel per Pi, each with
+an engraved traffolyte name label, an analog temperature gauge with a red zone,
+an LED bargraph for load, LED strips for memory and disk, a chrome pilot lamp,
+and engraved uptime. Every refresh it opens an SSH connection to each Pi in parallel
 (key auth, `BatchMode`, four-second connect timeout) and sends a read-only shell
 snippet over stdin that reports the SoC temperature, load averages, memory,
 root disk, uptime, model, and `vcgencmd get_throttled`. Each host becomes a
@@ -78,14 +79,14 @@ since boot.
 ## Customization
 
 - `interval` in the config sets the refresh; the widget's `refreshFrequency` is the default 30 s.
-- Temperature colors change at 55 °C and 70 °C (`tempTint` in `index.jsx`).
+- The gauge's red zone starts at 70 °C (the `conic-gradient` in `.gauge .zone` in `index.jsx`).
 - `setup/pi-fleet.py` is the same helper as a file: `python3 setup/pi-fleet.py | python3 -m json.tool` shows exactly what the widget sees.
 - All visual styling is in the inlined design-system block at the top of `index.jsx`.
 
 ## Bundled files
 
 - `pi-fleet.widget/index.jsx` — the widget, helper embedded
-- `pi-fleet.widget/fonts/` — DSEG7 Classic (seven-segment), Barlow Condensed, Rubik; all SIL Open Font License, see `fonts/OFL.txt`
+- `pi-fleet.widget/fonts/` — Barlow Condensed; SIL Open Font License, see `fonts/OFL.txt`
 - `setup/pi-fleet.py` — the same helper as a file
 - `setup/pi-fleet.example.json` — a starting config
 - `setup/configure.sh` — writes the config on install if none exists
